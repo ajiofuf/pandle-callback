@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Local connector callback</title>
+<style>
+  body { font: 16px/1.5 system-ui, sans-serif; max-width: 32rem; margin: 3rem auto; padding: 0 1rem; color: #222; background: #fff; }
+  @media (prefers-color-scheme: dark) { body { color: #e6e6e6; background: #181818; } }
+</style>
+</head>
+<body>
+<h1>Returning to your PC</h1>
+<p id="msg">Passing the authorisation back to the connector running on this computer.</p>
+<noscript><p>JavaScript is required to complete this step.</p></noscript>
+<script>
+// Forwards the OAuth response to the connector listening on this PC only.
+// The destination is fixed; only the standard OAuth response parameters are passed on.
+(function () {
+  var LOCAL = "http://127.0.0.1:8766/oauth/callback";
+  var ALLOWED = ["code", "state", "error", "error_description"];
+  var msg = document.getElementById("msg");
+  var incoming = new URLSearchParams(window.location.search);
+  var outgoing = new URLSearchParams();
+  ALLOWED.forEach(function (k) {
+    var v = incoming.get(k);
+    if (v !== null && v.length <= 2048) outgoing.set(k, v);
+  });
+  if (!outgoing.has("code") && !outgoing.has("error")) {
+    msg.textContent = "Nothing to forward. Start the authorisation from the connector on your PC.";
+    return;
+  }
+  // Remove the response from this page's address and history before leaving.
+  try { window.history.replaceState(null, "", window.location.pathname); } catch (e) {}
+  msg.textContent = "Returning to the connector on your PC. If nothing happens, make sure the connector is still waiting, then start the authorisation again.";
+  window.location.replace(LOCAL + "?" + outgoing.toString());
+})();
+</script>
+</body>
+</html>
